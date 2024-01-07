@@ -4,7 +4,7 @@ Ce document fournit des instructions sur l'installation et l'utilisation de Cust
 
 ## Prérequis
 
-- Java Development Kit (JDK) 8 ou supérieur.
+- Java Development Kit [(JDK) 18](https://download.oracle.com/java/18/archive/jdk-18.0.2.1_windows-x64_bin.exe ) ou supérieur.
 - Un environnement de développement intégré (IDE) comme IntelliJ IDEA, Eclipse, ou NetBeans.
 
 ## Installation des Sources

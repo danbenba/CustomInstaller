@@ -2,8 +2,12 @@ package fr.danbenba.CustomInstaller;
 import javax.swing.*;
 
 import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.event.*;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.Timer;
@@ -18,6 +22,7 @@ public class CustomInstallerGUI extends JFrame {
     private JButton btnClose;
     private JProgressBar progressBar;
     private JLabel lblStatus;
+	private JLabel lblGitHubLink;
     private JLabel lblFooter; // Déclaration de lblFooter
 
     public CustomInstallerGUI() {
@@ -82,8 +87,29 @@ public class CustomInstallerGUI extends JFrame {
         });
         add(btnClose);
 
+        lblGitHubLink = new JLabel("<html><a href=''>GitHub Official</a></html>");
+        lblGitHubLink.setBounds(280, 100, 370, 25);
+        lblGitHubLink.setForeground(Color.BLUE);
+        lblGitHubLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        lblGitHubLink.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                try {
+                    Desktop.getDesktop().browse(new URI("https://github.com/danbenba"));
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                    // Gestion de l'exception IOException
+                } catch (URISyntaxException e1) {
+                    e1.printStackTrace();
+                    // Gestion de l'exception URISyntaxException
+                }
+            }
+        });
+        
+        add(lblGitHubLink);
+
+        
         // Label Footer
-        lblFooter = new JLabel("---- CustomInstaller 1.0.0 by danbenba ----");
+        lblFooter = new JLabel("---- Created by CustomInstaller ----");
         lblFooter.setBounds(10, 130, 370, 25);
         lblFooter.setForeground(Color.GRAY);
         lblFooter.setHorizontalAlignment(SwingConstants.CENTER);
@@ -136,8 +162,14 @@ public class CustomInstallerGUI extends JFrame {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-                        progressBar.setValue(90);
                         copy(source, targetDir.resolve(tempDir.relativize(source)));
+                        progressBar.setValue(90);
+                        try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
                     });
 
                 return null;

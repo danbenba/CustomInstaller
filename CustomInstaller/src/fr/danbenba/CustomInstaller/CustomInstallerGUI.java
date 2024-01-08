@@ -88,7 +88,7 @@ public class CustomInstallerGUI extends JFrame {
         add(btnClose);
 
         lblGitHubLink = new JLabel("<html><a href=''>GitHub Official</a></html>");
-        lblGitHubLink.setBounds(280, 100, 370, 25);
+        lblGitHubLink.setBounds(300, 100, 370, 25);
         lblGitHubLink.setForeground(Color.BLUE);
         lblGitHubLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
         lblGitHubLink.addMouseListener(new MouseAdapter() {

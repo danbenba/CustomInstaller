@@ -4,7 +4,7 @@ Ce document fournit des instructions sur l'installation et l'utilisation de Cust
 
 ## Prérequis
 
-- [Java Custom (Default JDK eclipse)](https://github.com/danbenba/CustomInstaller/releases/download/1.0.0/JreCustom.zip) ou supérieur.
+- [Java 23 (JDK)](https://www.oracle.com/fr/java/technologies/downloads/) ou supérieur.
 - Un environnement de développement intégré (IDE) comme IntelliJ IDEA, Eclipse, ou NetBeans.
 
 ## Installation des Sources

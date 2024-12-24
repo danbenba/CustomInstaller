@@ -1,0 +1,4 @@
+C:\Users\Dany\Desktop\CustomInstaller Installed\obj\Release\net9.0\win-x64\CustomInstaller Installed.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Dany\Desktop\CustomInstaller Installed\obj\Release\net9.0\win-x64\CustomInstaller Installed.AssemblyInfoInputs.cache
+C:\Users\Dany\Desktop\CustomInstaller Installed\obj\Release\net9.0\win-x64\CustomInstaller Installed.AssemblyInfo.cs
+C:\Users\Dany\Desktop\CustomInstaller Installed\obj\Release\net9.0\win-x64\CustomInstaller Installed.csproj.CoreCompileInputs.cache

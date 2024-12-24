@@ -1,4 +1,4 @@
-# Custom Installer – Version Preview
+# Custom Installer
 
 Ce projet est une application Java (basée sur **Swing**) permettant d’effectuer l’installation d’un logiciel de manière automatisée et avancée. Il inclut :
 
@@ -71,13 +71,11 @@ Ce projet est une application Java (basée sur **Swing**) permettant d’effectu
 
 ```bash
 # Via HTTPS
-git clone https://github.com/<votre-nom-utilisateur>/CustomInstaller.git
+git clone https://github.com/danbenba/CustomInstaller.git
 
 # OU via SSH
-git clone git@github.com:<votre-nom-utilisateur>/CustomInstaller.git
+git clone git@github.com:danbenba/CustomInstaller.git
 ```
-
-Remplacez `<votre-nom-utilisateur>` par votre pseudo ou le nom du dépôt GitHub cible.
 
 ### 2. Importer dans votre IDE (facultatif)
 
@@ -242,7 +240,7 @@ Si vous ne maîtrisez pas Git, voici un mini-récapitulatif :
    ```
 4. **Associer le dépôt local à GitHub** :
    ```bash
-   git remote add origin https://github.com/<votre-nom-utilisateur>/CustomInstaller.git
+   git remote add origin https://github.com/danbenba/CustomInstaller.git
    ```
 5. **Pousser (push) les commits vers GitHub** :
    ```bash
@@ -262,7 +260,7 @@ Pour plus de détails, voir la [documentation Git officielle](https://git-scm.co
 1. **Forkez** le projet sur GitHub.  
 2. **Clonez** votre fork en local :  
    ```bash
-   git clone https://github.com/<votre-nom-utilisateur>/CustomInstaller.git
+   git clone https://github.com/danbenba/CustomInstaller.git
    ```
 3. Créez une **branche** pour votre nouvelle fonctionnalité ou correctif :  
    ```bash
@@ -278,11 +276,7 @@ Pour plus de détails, voir la [documentation Git officielle](https://git-scm.co
    ```
 6. Créez une **Pull Request** sur le dépôt principal, en expliquant vos modifications.
 
----
-
-## Licence
-
-Ce projet est distribué sous licence **MIT**. Vous êtes libre de l’utiliser, le modifier et le redistribuer. Veuillez consulter le fichier `LICENSE` (s’il est fourni) ou créer un nouveau fichier `LICENSE` si vous souhaitez définir précisément les conditions d’utilisation.  
+--- 
 
 **Merci d’utiliser Custom Installer !**  
 *N’hésitez pas à ouvrir une *issue* ou une *pull request* si vous rencontrez un souci ou si vous souhaitez proposer des améliorations.*

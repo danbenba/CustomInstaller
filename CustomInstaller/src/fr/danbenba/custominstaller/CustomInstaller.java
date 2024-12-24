@@ -21,7 +21,7 @@ public class CustomInstaller extends JFrame {
 
         loadingLabel = new JLabel("Loading...");
         add(loadingLabel);
-        
+
         setAlwaysOnTop(true); // Garde la fenêtre au premier plan
 
         // Initialisation de la barre de progression
@@ -35,7 +35,7 @@ public class CustomInstaller extends JFrame {
         Timer timer = new Timer(100, new ActionListener() {
             private int progress = 0;
             private Random r = new Random();
-            
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (progress < 100) {
@@ -62,12 +62,12 @@ public class CustomInstaller extends JFrame {
 
     public void updateProgress(int value) {
         progressBar.setValue(Math.min(value, 100)); // Assure que la progression ne dépasse pas 100
-        if (value >= 90) {
+        if (value >= 99) {
             loadingLabel.setText("Loading...");
-        } else if (value >= 50) {
-            loadingLabel.setText("Extracting files...");
+        } else if (value >= 40) {
+            loadingLabel.setText("Unpacking...");
         } else if (value >= 30) {
-            loadingLabel.setText("Extracting files...");
+            loadingLabel.setText("Wiring at 0x000054...");
         }
     }
 

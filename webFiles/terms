@@ -1,1 +1,128 @@
-# Voici un exemple d'installateur personnalisé !
+# Notes de Version de CustomInstaller
+
+## Version 2.0pre2 ➜ Version 2.0pre3
+
+Nous sommes ravis d'annoncer la sortie de **CustomInstaller v2.0pre3**, apportant de nombreuses nouvelles fonctionnalités, améliorations et optimisations par rapport à la version précédente (**v2.0pre2**). Cette mise à jour vise à offrir une expérience d'installation plus sécurisée, conviviale et robuste.
+
+## Nouvelles Fonctionnalités
+
+### 1. **Protection par Mot de Passe Avant Lancement**
+- **Description :** Une option permettant d'ajouter une demande de mot de passe avant d'accéder à l'installateur.
+- **Avantage :** Renforce la sécurité en restreignant l'accès non autorisé au processus d'installation.
+
+### 2. **Téléchargements Résumables**
+- **Description :** Support pour les téléchargements résumables, permettant de reprendre le téléchargement là où il s'est arrêté en cas d'interruption.
+- **Avantage :** Offre une expérience de téléchargement plus fiable, surtout dans des conditions de réseau instables.
+
+### 3. **Options de Configuration Avancées**
+- **Description :** Ajout d'une boîte de dialogue d'options avancées permettant de configurer des paramètres tels que les serveurs proxy.
+- **Avantage :** Offre une flexibilité accrue pour les utilisateurs ayant des configurations réseau spécifiques ou d'autres besoins avancés.
+
+### 4. **Conditions Générales en Markdown**
+- **Description :** Intégration du support Markdown pour l'affichage des Conditions Générales d'Utilisation, convertissant le Markdown en HTML pour une meilleure lisibilité.
+- **Avantage :** Améliore la présentation des documents légaux, les rendant plus conviviaux.
+
+### 5. **Améliorations du Système de Journalisation (Logging)**
+- **Description :** Amélioration des capacités de journalisation avec des chemins de fichiers de log configurables et des messages de log détaillés.
+- **Avantage :** Facilite le dépannage et la surveillance du processus d'installation.
+
+---
+
+## Améliorations
+
+### 1. **Améliorations de l'Interface Utilisateur**
+- **Description :** Optimisation de l'interface de l'installateur avec une meilleure gestion de la disposition, des composants réactifs et des éléments visuels améliorés tels que des bannières avec gestion du ratio d'aspect.
+- **Avantage :** Offre un aspect plus professionnel et soigné, améliorant l'expérience utilisateur.
+
+### 2. **Options de Création de Raccourcis**
+- **Description :** Ajout d'une case à cocher permettant aux utilisateurs de créer des raccourcis sur le bureau et dans le menu Démarrer lors de l'installation.
+- **Avantage :** Offre une commodité en permettant un accès rapide à l'application installée.
+
+### 3. **Vérification Améliorée de la Version de Java**
+- **Description :** Amélioration de la logique de vérification de la version de Java pour gérer plus précisément différents formats de chaînes de version.
+- **Avantage :** Assure la compatibilité et prévient les échecs d'installation dus à des versions insuffisantes de Java.
+
+### 4. **Gestion Améliorée des Fichiers de Configuration**
+- **Description :** Optimisation du chargement et de la gestion des propriétés de configuration, incluant des valeurs par défaut et le remplacement des variables d'environnement.
+- **Avantage :** Augmente la flexibilité et la facilité de personnalisation via les fichiers de configuration.
+
+---
+
+## Corrections de Bugs
+
+### 1. **Chemin de Chargement du Fichier de Configuration**
+- **Description :** Correction du chemin utilisé pour charger `config.properties` afin de s'assurer qu'il est correctement localisé dans le classpath.
+- **Impact :** Garantit le chargement correct des configurations nécessaires à l'installation.
+
+### 2. **Rendu Markdown des Conditions Générales**
+- **Description :** Correction du rendu des Conditions Générales d'Utilisation en Markdown vers HTML, empêchant ainsi les problèmes d'affichage.
+- **Impact :** Assure que les documents légaux sont affichés correctement et de manière lisible.
+
+### 3. **Création de Raccourcis sur Divers Systèmes**
+- **Description :** Amélioration du processus de création des raccourcis pour gérer plus fiablement divers environnements Windows.
+- **Impact :** Évite les problèmes potentiels liés à la gestion des chemins et à l'exécution des scripts.
+
+---
+
+## Changements Importants
+
+### 1. **Modifications des Propriétés de Configuration**
+- **Description :** Certaines propriétés de configuration ont été mises à jour ou ajoutées.
+- **Impact :** Les utilisateurs devront mettre à jour leurs fichiers `config.properties` pour inclure les nouvelles propriétés et adapter les noms existants aux nouvelles structures.
+- **Action Requise :**
+  - Mettre à jour `config.properties` pour inclure de nouvelles propriétés telles que `launch.password.enabled`, `download.resumable`, etc.
+  - Revoir et ajuster les propriétés existantes pour aligner avec la nouvelle structure de configuration.
+
+### 2. **Dépendance aux Bibliothèques Externes**
+- **Description :** La version 2.0 introduit des dépendances sur des bibliothèques externes telles que Zip4j et CommonMark.
+- **Impact :** Assurez-vous que ces bibliothèques sont incluses dans le classpath lors du déploiement.
+- **Action Requise :**
+  - Ajouter les dépendances Zip4j et CommonMark à la configuration de build de votre projet (par exemple, Maven, Gradle).
+
+---
+
+## Instructions de Mise à Jour
+
+1. **Sauvegarder la Configuration Actuelle :**
+   - Assurez-vous de sauvegarder vos fichiers de configuration existants `config.properties` et tout autre fichier de configuration important.
+
+2. **Mettre à Jour les Fichiers de Configuration :**
+   - Fusionnez vos fichiers `config.properties` existants avec les nouvelles propriétés introduites dans la version 2.0.
+   - Assurez-vous que toutes les propriétés requises sont correctement définies, en particulier les nouvelles telles que `launch.password.enabled`.
+
+3. **Inclure les Nouvelles Dépendances :**
+   - Ajoutez les bibliothèques Zip4j et CommonMark à vos dépendances de projet.
+   - Exemple pour Maven :
+     ```xml
+     <dependency>
+         <groupId>net.lingala.zip4j</groupId>
+         <artifactId>zip4j</artifactId>
+         <version>2.9.0</version>
+     </dependency>
+     <dependency>
+         <groupId>org.commonmark</groupId>
+         <artifactId>commonmark</artifactId>
+         <version>0.18.2</version>
+     </dependency>
+     ```
+
+4. **Recompiler l'Installateur :**
+   - Recompilez votre projet pour inclure les dernières modifications et dépendances.
+
+5. **Tester l'Installateur :**
+   - Exécutez l'installateur mis à jour dans un environnement contrôlé pour vous assurer que toutes les nouvelles fonctionnalités et modifications fonctionnent comme prévu.
+
+6. **Déployer :**
+   - Une fois les tests réussis, procédez au déploiement de l'installateur mis à jour auprès de vos utilisateurs.
+
+---
+
+## Remerciements
+
+Nous tenons à remercier notre équipe de développement et les contributeurs de la communauté pour leurs retours précieux et leur soutien, ayant permis de faire de **CustomInstaller v2.0** une solution d'installation robuste et riche en fonctionnalités.
+
+Pour toute question, retour ou support, veuillez visiter notre [Dépôt GitHub](https://github.com/danbenba/CustomInstaller) ou contacter notre équipe de support.
+
+---
+
+**Merci d'avoir choisi CustomInstaller !**

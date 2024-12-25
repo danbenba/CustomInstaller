@@ -16,8 +16,16 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.*;
-import java.util.Timer;
 import java.util.zip.*;
+
+// *** Zip4j ***
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+
+// *** CommonMark (Markdown -> HTML) ***
+import org.commonmark.node.*;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 
 @SuppressWarnings({ "serial", "unused" })
 public class InstallerGUI extends JFrame {
@@ -31,7 +39,6 @@ public class InstallerGUI extends JFrame {
     private JLabel lblFooter;
     private JLabel lblImage;
     private JButton btnAdvancedOptions;
-
     private JCheckBox chkCreateShortcut;
 
     private static CountDownLatch latch = new CountDownLatch(1);
@@ -43,11 +50,55 @@ public class InstallerGUI extends JFrame {
         // 1) Charger la config
         config = loadConfig();
 
-        // 2) Initialiser le log (si activé)
+        // (Optionnel) Mot de passe avant lancement
+        boolean launchPasswordEnabled = Boolean.parseBoolean(
+                config.getProperty("launch.password.enabled", "false")
+        );
+        if (launchPasswordEnabled) {
+            String correctPassword = config.getProperty("launch.password", "");
+            while (true) {
+                String enteredPassword = JOptionPane.showInputDialog(
+                        null,
+                        "Veuillez entrer le mot de passe pour lancer l'installateur :",
+                        "Authentification requise",
+                        JOptionPane.QUESTION_MESSAGE
+                );
+                if (enteredPassword == null) {
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Installation annulée.",
+                            "Quitter",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                    System.exit(0);
+                }
+                if (enteredPassword.equals(correctPassword)) {
+                    break;
+                } else {
+                    int retry = JOptionPane.showConfirmDialog(
+                            null,
+                            "Mot de passe incorrect. Réessayer ?",
+                            "Erreur",
+                            JOptionPane.YES_NO_OPTION
+                    );
+                    if (retry != JOptionPane.YES_OPTION) {
+                        JOptionPane.showMessageDialog(
+                                null,
+                                "Installation annulée.",
+                                "Quitter",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+                        System.exit(0);
+                    }
+                }
+            }
+        }
+
+        // 2) Init log
         initLogFile();
         log("----- Lancement de l'installeur -----");
 
-        // 3) Vérifier la version Java
+        // 3) Check Java
         if (!checkJavaVersion()) {
             System.exit(0);
         }
@@ -60,11 +111,14 @@ public class InstallerGUI extends JFrame {
         }
 
         setTitle(config.getProperty("app.title"));
+
+        // *** 1) Permettre la fermeture de la fenêtre principale via la croix Windows ***
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(500, 400);
         setResizable(false);
-        ImageIcon icon = new ImageIcon(getClass().getResource(config.getProperty("app.iconPath")));
+
+        ImageIcon icon = new ImageIcon(Objects.requireNonNull(getClass().getResource(config.getProperty("app.iconPath"))));
         setIconImage(icon.getImage());
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(null);
 
         // Emplacement (user / admin)
@@ -103,7 +157,7 @@ public class InstallerGUI extends JFrame {
             System.exit(0);
         }
 
-        // Bannière (image) depuis config
+        // Bannière
         ImageIcon originalIcon = new ImageIcon(new URL(config.getProperty("app.mainImage")));
         Image originalImage = originalIcon.getImage();
         int originalWidth = originalIcon.getIconWidth();
@@ -126,18 +180,18 @@ public class InstallerGUI extends JFrame {
         lblImage.setBounds(50, 10, 400, newHeight + 20);
         add(lblImage);
 
-        // Chemin d’installation
+        // Champ chemin
         txtEmplacement = new JTextField(emplacement);
         txtEmplacement.setBounds(10, 230, 470, 25);
         add(txtEmplacement);
 
-        // Status
+        // Label status
         lblStatus = new JLabel("Waiting for installation...");
         lblStatus.setBounds(10, 260, 470, 25);
         lblStatus.setForeground(Color.BLACK);
         add(lblStatus);
 
-        // ProgressBar
+        // Progress Bar
         progressBar = new JProgressBar(0, 100);
         progressBar.setBounds(10, 290, 470, 25);
         progressBar.setStringPainted(true);
@@ -148,7 +202,6 @@ public class InstallerGUI extends JFrame {
         btnInstaller = new JButton("Installer");
         btnInstaller.setBounds(10, 320, 100, 25);
         btnInstaller.addActionListener(e -> {
-            // (4) Détection si déjà installé => see config "alreadyInstalledCheck.enabled"
             boolean alreadyInstalledCheckEnabled = Boolean.parseBoolean(
                     config.getProperty("alreadyInstalledCheck.enabled", "true")
             );
@@ -177,24 +230,24 @@ public class InstallerGUI extends JFrame {
         btnClose = new JButton("Close");
         btnClose.setBounds(120, 320, 100, 25);
         btnClose.addActionListener(e -> {
-            log("Fermeture de l'installeur.");
+            log("Fermeture de l'installeur (bouton Close).");
             dispose();
         });
         add(btnClose);
 
-        // Case à cocher (raccourci)
+        // Case à cocher pour raccourci
         if ("true".equalsIgnoreCase(config.getProperty("shortcut.enabled", "false"))) {
             chkCreateShortcut = new JCheckBox("Créer un raccourci");
             chkCreateShortcut.setBounds(365, 260, 300, 25);
             add(chkCreateShortcut);
         }
 
-        // (6) Bouton Options avancées (activé/désactivé via config `advanced.enabled`)
+        // Bouton options avancées
         if (Boolean.parseBoolean(config.getProperty("advanced.enabled", "true"))) {
             addAdvancedOptionsButton();
         }
 
-        // Lien GitHub (optionnel)
+        // (Lien GitHub) - Optionnel
         lblGitHubLink = new JLabel(config.getProperty("link.name", ""));
         lblGitHubLink.setBounds(375, 321, 230, 25);
         lblGitHubLink.setForeground(Color.BLUE);
@@ -225,7 +278,7 @@ public class InstallerGUI extends JFrame {
      */
     private Properties loadConfig() {
         Properties properties = new Properties();
-        try (InputStream input = getClass().getResourceAsStream("config.properties")) {
+        try (InputStream input = getClass().getResourceAsStream("/config.properties")) {
             if (input == null) {
                 throw new FileNotFoundException("Configuration file 'config.properties' not found in the classpath.");
             }
@@ -267,11 +320,18 @@ public class InstallerGUI extends JFrame {
     private boolean checkJavaVersion() {
         int minVersion = Integer.parseInt(config.getProperty("java.minVersion", "11"));
         String version = System.getProperty("java.version");
-        int majorVersion;
+        log("Java détecté : " + version + " (min requis : " + minVersion + ")");
+
+        int majorVersion = 0;
         try {
-            majorVersion = Integer.parseInt(version.split("\\.")[0]);
+            String[] parts = version.split("\\.");
+            if (parts[0].equals("1")) {
+                majorVersion = Integer.parseInt(parts[1]);
+            } else {
+                majorVersion = Integer.parseInt(parts[0]);
+            }
         } catch (NumberFormatException e) {
-            majorVersion = 0;
+            log("Impossible de parser la version Java: " + e.getMessage());
         }
 
         if (majorVersion < minVersion) {
@@ -290,18 +350,17 @@ public class InstallerGUI extends JFrame {
     }
 
     /**
-     * Détection si le programme est déjà installé
+     * Détection si déjà installé
      */
     private boolean isProgramAlreadyInstalled() {
         Path installPath = Paths.get(txtEmplacement.getText());
-        // On lit le nom du fichier "clé" depuis config
         String alreadyInstalledFile = config.getProperty("alreadyInstalledCheck.file", "CustomInstaller.exe");
         Path mainExe = installPath.resolve(alreadyInstalledFile);
         return Files.exists(mainExe);
     }
 
     /**
-     * Ajout du bouton d'options avancées
+     * Bouton options avancées
      */
     private void addAdvancedOptionsButton() {
         btnAdvancedOptions = new JButton("Options avancées");
@@ -322,8 +381,6 @@ public class InstallerGUI extends JFrame {
             JButton btnOK = new JButton("OK");
             btnOK.setBounds(150, 220, 80, 25);
             btnOK.addActionListener(ev -> {
-                // Ex: config.setProperty("proxy", txtProxy.getText());
-                // log("Proxy configuré: " + txtProxy.getText());
                 advancedDialog.dispose();
             });
             advancedDialog.add(btnOK);
@@ -359,29 +416,54 @@ public class InstallerGUI extends JFrame {
                 new InputStreamReader(connection.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                response.append(line);
+                response.append(line).append("\n");
             }
         }
         return response.toString();
     }
 
+    /**
+     * 2) Afficher CGU + lancer installation
+     */
     private void showMarkdownAndStartInstallation() {
-        // Afficher CGU
         JDialog dialog = new JDialog(this, "Terms and Conditions", true);
         dialog.setSize(800, 630);
         dialog.setResizable(false);
         dialog.setLayout(null);
 
+        // *** Empêcher la fermeture silencieuse => On annule l'installation si on ferme la fenêtre ***
+        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                log("Installation annulée depuis l'écran des CGU (croix).");
+                dialog.dispose();
+                // Réactiver le bouton "Installer" + cacher la barre + message "Installation canceled"
+                btnInstaller.setEnabled(true);
+                progressBar.setVisible(false);
+                lblStatus.setText("Installation canceled");
+            }
+        });
+
         JTextPane textPane = new JTextPane();
-        textPane.setContentType("text/plain");
+        textPane.setContentType("text/html");
         textPane.setEditable(false);
 
         try {
+            // On télécharge le Markdown depuis l’URL
             URL url = new URL(config.getProperty("terms.url"));
             String termsContent = downloadText(url);
-            textPane.setText(termsContent);
+
+            // 3) Forcer la police Windows 11 (Segoe UI) + converter Markdown -> HTML
+            String style = "<style>body { font-family: 'Segoe UI'; font-size: 14px; }</style>";
+            String mdHtml = convertMarkdownToHtml(termsContent);
+            String htmlContent = "<html><head>" + style + "</head><body>" + mdHtml + "</body></html>";
+
+            textPane.setText(htmlContent);
+            textPane.setCaretPosition(0); // Remonter en haut
+
         } catch (IOException e) {
-            textPane.setText("Failed to load content.");
+            textPane.setText("<html><body><h3>Failed to load content.</h3></body></html>");
         }
 
         JScrollPane scrollPane = new JScrollPane(textPane);
@@ -389,7 +471,7 @@ public class InstallerGUI extends JFrame {
         dialog.add(scrollPane);
 
         JCheckBox chkAccept = new JCheckBox("I Accept the Terms and Conditions");
-        chkAccept.setBounds(10, 520, 250, 25);
+        chkAccept.setBounds(10, 520, 300, 25);
         dialog.add(chkAccept);
 
         JButton btnDownload = new JButton("Install");
@@ -412,9 +494,11 @@ public class InstallerGUI extends JFrame {
 
         btnExit.setBounds(startXPosition + buttonWidth + 20, buttonYPosition, buttonWidth, buttonHeight);
         btnExit.addActionListener(ae -> {
+            log("Installation annulée depuis l'écran des CGU (bouton Exit).");
             dialog.dispose();
-            log("Installation annulée depuis l'écran des CGU.");
-            System.exit(0);
+            btnInstaller.setEnabled(true);
+            progressBar.setVisible(false);
+            lblStatus.setText("Installation canceled");
         });
         dialog.add(btnExit);
 
@@ -427,12 +511,22 @@ public class InstallerGUI extends JFrame {
     }
 
     /**
+     * Convertir Markdown -> HTML avec CommonMark
+     */
+    private String convertMarkdownToHtml(String markdown) {
+        Parser parser = Parser.builder().build();
+        Node document = parser.parse(markdown);
+        HtmlRenderer renderer = HtmlRenderer.builder().build();
+        return renderer.render(document);
+    }
+
+    /**
      * Méthode principale d'installation
      */
     private void installer() {
         progressBar.setVisible(true);
 
-        // (9) Vérifier la connectivité => internetCheck.enabled
+        // Vérif internet
         boolean netCheck = Boolean.parseBoolean(config.getProperty("internetCheck.enabled", "true"));
         if (netCheck && !checkInternetConnectivity()) {
             JOptionPane.showMessageDialog(
@@ -446,14 +540,13 @@ public class InstallerGUI extends JFrame {
             return;
         }
 
-        // Vérifier l'espace disque
+        // Vérif espace disque
         if (!checkDiskSpace(Paths.get(txtEmplacement.getText()))) {
             log("Installation annulée : espace disque insuffisant.");
             return;
         }
 
-        // Travail asynchrone
-        SwingWorker<Void, String> worker = new SwingWorker<>() {
+        SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
             @Override
             protected Void doInBackground() {
                 try {
@@ -463,10 +556,8 @@ public class InstallerGUI extends JFrame {
 
                     URL url = new URL(config.getProperty("download.url"));
                     Path tempDir = Files.createTempDirectory("CustomInstaller");
-
-                    // (10) Téléchargement résumable => download.resumable
                     boolean resumable = Boolean.parseBoolean(config.getProperty("download.resumable", "false"));
-                    File zipFile = null;
+                    File zipFile;
                     if (resumable) {
                         zipFile = downloadFileResumable(url, tempDir);
                     } else {
@@ -477,7 +568,14 @@ public class InstallerGUI extends JFrame {
                     progressBar.setValue(30);
                     Thread.sleep(200);
 
-                    unzip(zipFile, tempDir);
+                    boolean zipPasswordEnabled = Boolean.parseBoolean(config.getProperty("zip.password.enabled", "false"));
+                    String zipPassword = config.getProperty("zip.password", "");
+
+                    if (zipPasswordEnabled) {
+                        unzipWithPassword(zipFile, tempDir, zipPassword);
+                    } else {
+                        unzip(zipFile, tempDir);
+                    }
                     zipFile.delete();
 
                     Path targetDir = Paths.get(txtEmplacement.getText());
@@ -493,7 +591,6 @@ public class InstallerGUI extends JFrame {
                         }
                     });
 
-                    // (7) Désinstalleur => uninstaller.enabled
                     boolean uninstallerEnabled = Boolean.parseBoolean(config.getProperty("uninstaller.enabled", "true"));
                     if (uninstallerEnabled) {
                         createUninstaller(targetDir);
@@ -512,7 +609,6 @@ public class InstallerGUI extends JFrame {
                 lblStatus.setText("Installation finished");
                 log("Installation terminée.");
 
-                // Créer raccourcis (si coché)
                 if (chkCreateShortcut != null && chkCreateShortcut.isSelected()) {
                     try {
                         createShortcuts();
@@ -523,7 +619,6 @@ public class InstallerGUI extends JFrame {
                     }
                 }
 
-                // (8) Proposer de lancer l’app => launch.prompt
                 boolean launchPrompt = Boolean.parseBoolean(config.getProperty("launch.prompt", "true"));
                 if (launchPrompt) {
                     proposeToRunApplication();
@@ -534,7 +629,7 @@ public class InstallerGUI extends JFrame {
     }
 
     /**
-     * Vérifier la connectivité
+     * Vérif internet
      */
     private boolean checkInternetConnectivity() {
         try {
@@ -550,33 +645,28 @@ public class InstallerGUI extends JFrame {
     }
 
     /**
-     * Vérifier l'espace disque
+     * Vérif espace disque
      */
     private boolean checkDiskSpace(Path installPath) {
         long requiredBytes = Long.parseLong(config.getProperty("installer.minSpace", "200000000"));
         try {
-            // 1) Vérifier si le dossier existe déjà
             if (Files.notExists(installPath)) {
-                // 2) Demander à l'utilisateur s'il veut créer le dossier
                 int choice = JOptionPane.showConfirmDialog(
                         this,
                         "Le dossier " + installPath + " n'existe pas.\nVoulez-vous le créer ?",
                         "Dossier inexistant",
                         JOptionPane.YES_NO_OPTION
                 );
-
-                // 3) Créer le dossier seulement si l'utilisateur accepte
                 if (choice == JOptionPane.YES_OPTION) {
                     Files.createDirectories(installPath);
                     log("Dossier créé : " + installPath);
                 } else {
                     log("Utilisateur a refusé de créer le dossier : " + installPath);
                     lblStatus.setText("Installation canceled");
-                    return false; // On peut annuler l’installation
+                    return false;
                 }
             }
 
-            // Maintenant qu’on est sûr que le dossier existe, on peut récupérer le FileStore sans erreur
             FileStore store = Files.getFileStore(installPath);
             long available = store.getUsableSpace();
             if (available < requiredBytes) {
@@ -601,7 +691,6 @@ public class InstallerGUI extends JFrame {
         }
         return true;
     }
-
 
     /**
      * Téléchargement simple
@@ -632,7 +721,7 @@ public class InstallerGUI extends JFrame {
     }
 
     /**
-     * (10) Téléchargement résumable
+     * Téléchargement résumable
      */
     private File downloadFileResumable(URL url, Path tempDir) throws IOException {
         File partialFile = tempDir.resolve("downloaded.zip").toFile();
@@ -646,7 +735,6 @@ public class InstallerGUI extends JFrame {
         connection.connect();
 
         int responseCode = connection.getResponseCode();
-        // Si pas de support HTTP_PARTIAL => retombe en normal
         if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {
             log("Serveur ne supporte pas la reprise (code=" + responseCode + "), on retente en normal.");
             return downloadFile(url, tempDir);
@@ -657,7 +745,6 @@ public class InstallerGUI extends JFrame {
         try (RandomAccessFile raf = new RandomAccessFile(partialFile, "rw");
              InputStream in = connection.getInputStream()) {
 
-            // On se place à la fin
             raf.seek(existingSize);
             byte[] buffer = new byte[4096];
             long totalBytesRead = existingSize;
@@ -676,7 +763,7 @@ public class InstallerGUI extends JFrame {
     }
 
     /**
-     * Dézipper
+     * Dézipper normal
      */
     private void unzip(File zipFile, Path outputPath) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
@@ -695,6 +782,23 @@ public class InstallerGUI extends JFrame {
             }
         }
         log("Fichiers dézippés dans: " + outputPath);
+    }
+
+    /**
+     * Dézipper avec mot de passe (Zip4j)
+     */
+    private void unzipWithPassword(File zipFile, Path outputPath, String password) throws IOException {
+        try {
+            ZipFile zf = new ZipFile(zipFile);
+            if (zf.isEncrypted()) {
+                zf.setPassword(password.toCharArray());
+            }
+            zf.extractAll(outputPath.toString());
+            log("Fichiers dézippés (avec mot de passe) dans: " + outputPath);
+        } catch (ZipException e) {
+            log("Erreur Zip4j: " + e.getMessage());
+            throw new IOException("Impossible de dézipper l'archive protégée.");
+        }
     }
 
     private Path zipSlipProtect(ZipEntry zipEntry, Path outputPath) throws IOException {
@@ -718,10 +822,9 @@ public class InstallerGUI extends JFrame {
     }
 
     /**
-     * (7) Créer un désinstalleur
+     * Créer un désinstalleur
      */
     private void createUninstaller(Path installDir) throws IOException {
-        // Si uninstaller.enabled est false, cette méthode ne sera pas appelée (voir plus haut).
         Path uninstaller = installDir.resolve("uninstall.bat");
         try (BufferedWriter writer = Files.newBufferedWriter(uninstaller, StandardOpenOption.CREATE)) {
             writer.write("@echo off");
@@ -787,7 +890,7 @@ public class InstallerGUI extends JFrame {
     }
 
     /**
-     * (8) Proposer de lancer l'app
+     * Proposer de lancer l'app
      */
     private void proposeToRunApplication() {
         int choice = JOptionPane.showConfirmDialog(
@@ -831,7 +934,7 @@ public class InstallerGUI extends JFrame {
         return false;
     }
 
-    // Méthode main
+    // Main
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
@@ -840,7 +943,6 @@ public class InstallerGUI extends JFrame {
                 e.printStackTrace();
             }
         });
-
         try {
             latch.await();
         } catch (InterruptedException e) {
